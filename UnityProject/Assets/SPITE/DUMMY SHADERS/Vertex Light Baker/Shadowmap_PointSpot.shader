@@ -1,15 +1,11 @@
-Shader "ULTRAKILL/Invert" {
+Shader "ULTRAKILL/Shadowmap_PointSpot" {
 	Properties {
-		[PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
 	}
 	SubShader {
-		LOD 100
-		Tags { "LIGHTMODE" = "FORWARDBASE" "OnlyDirectional" = "true" }
+		Tags { "QUEUE" = "Geometry" "RenderType" = "Opaque" }
 		Pass {
-			LOD 100
-			Tags { "LIGHTMODE" = "FORWARDBASE" "OnlyDirectional" = "true" }
-			Blend OneMinusDstColor Zero, OneMinusDstColor Zero
-			GpuProgramID 22256
+			Tags { "QUEUE" = "Geometry" "RenderType" = "Opaque" }
+			GpuProgramID 42488
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -18,20 +14,19 @@ Shader "ULTRAKILL/Invert" {
 			struct v2f
 			{
 				float4 position : SV_POSITION0;
-				float2 texcoord : TEXCOORD0;
+				float3 texcoord2 : TEXCOORD2;
 			};
 			struct fout
 			{
-				float4 sv_target : SV_Target0;
+				float sv_target : SV_Target0;
 			};
 			// $Globals ConstantBuffers for Vertex Shader
-			float4 _MainTex_ST;
 			// $Globals ConstantBuffers for Fragment Shader
+			float3 bakeLightPos;
 			// Custom ConstantBuffers for Vertex Shader
 			// Custom ConstantBuffers for Fragment Shader
 			// Texture params for Vertex Shader
 			// Texture params for Fragment Shader
-			sampler2D _MainTex;
 			
 			// Keywords: 
 			v2f vert(appdata_full v)
@@ -47,7 +42,7 @@ Shader "ULTRAKILL/Invert" {
                 tmp1 = unity_MatrixVP._m00_m10_m20_m30 * tmp0.xxxx + tmp1;
                 tmp1 = unity_MatrixVP._m02_m12_m22_m32 * tmp0.zzzz + tmp1;
                 o.position = unity_MatrixVP._m03_m13_m23_m33 * tmp0.wwww + tmp1;
-                o.texcoord.xy = v.texcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+                o.texcoord2.xyz = tmp0.xyz;
                 return o;
 			}
 			// Keywords: 
@@ -55,14 +50,9 @@ Shader "ULTRAKILL/Invert" {
 			{
                 fout o;
                 float4 tmp0;
-                float4 tmp1;
-                tmp0 = tex2D(_MainTex, inp.texcoord.xy);
-                tmp1.x = tmp0.w - 0.001;
-                o.sv_target = tmp0;
-                tmp0.x = tmp1.x < 0.0;
-                if (tmp0.x) {
-                    discard;
-                }
+                tmp0.xyz = inp.texcoord2.xyz - bakeLightPos;
+                tmp0.x = dot(tmp0.xyz, tmp0.xyz);
+                o.sv_target.x = sqrt(tmp0.x);
                 return o;
 			}
 			ENDCG

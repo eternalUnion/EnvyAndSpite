@@ -1,15 +1,14 @@
-Shader "ULTRAKILL/Invert" {
+Shader "Unlit/DebugVertexLights" {
 	Properties {
-		[PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
+		_MainTex ("Texture", 2D) = "white" {}
 	}
 	SubShader {
 		LOD 100
-		Tags { "LIGHTMODE" = "FORWARDBASE" "OnlyDirectional" = "true" }
+		Tags { "LIGHTMODE" = "Vertex" "RenderType" = "Opaque" }
 		Pass {
 			LOD 100
-			Tags { "LIGHTMODE" = "FORWARDBASE" "OnlyDirectional" = "true" }
-			Blend OneMinusDstColor Zero, OneMinusDstColor Zero
-			GpuProgramID 22256
+			Tags { "LIGHTMODE" = "Vertex" "RenderType" = "Opaque" }
+			GpuProgramID 32479
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -18,20 +17,18 @@ Shader "ULTRAKILL/Invert" {
 			struct v2f
 			{
 				float4 position : SV_POSITION0;
-				float2 texcoord : TEXCOORD0;
+				float4 color : COLOR0;
 			};
 			struct fout
 			{
 				float4 sv_target : SV_Target0;
 			};
 			// $Globals ConstantBuffers for Vertex Shader
-			float4 _MainTex_ST;
 			// $Globals ConstantBuffers for Fragment Shader
 			// Custom ConstantBuffers for Vertex Shader
 			// Custom ConstantBuffers for Fragment Shader
 			// Texture params for Vertex Shader
 			// Texture params for Fragment Shader
-			sampler2D _MainTex;
 			
 			// Keywords: 
 			v2f vert(appdata_full v)
@@ -47,22 +44,14 @@ Shader "ULTRAKILL/Invert" {
                 tmp1 = unity_MatrixVP._m00_m10_m20_m30 * tmp0.xxxx + tmp1;
                 tmp1 = unity_MatrixVP._m02_m12_m22_m32 * tmp0.zzzz + tmp1;
                 o.position = unity_MatrixVP._m03_m13_m23_m33 * tmp0.wwww + tmp1;
-                o.texcoord.xy = v.texcoord.xy * _MainTex_ST.xy + _MainTex_ST.zw;
+                o.color = v.texcoord2;
                 return o;
 			}
 			// Keywords: 
 			fout frag(v2f inp)
 			{
                 fout o;
-                float4 tmp0;
-                float4 tmp1;
-                tmp0 = tex2D(_MainTex, inp.texcoord.xy);
-                tmp1.x = tmp0.w - 0.001;
-                o.sv_target = tmp0;
-                tmp0.x = tmp1.x < 0.0;
-                if (tmp0.x) {
-                    discard;
-                }
+                o.sv_target = inp.color;
                 return o;
 			}
 			ENDCG
